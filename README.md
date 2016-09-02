@@ -2,7 +2,7 @@
 A Common Lisp library for manipulating and calculating IPv4 and IPv6
 network addresses.
 
-This library is intended to do useful things with IP addresses. The following funcations are available:
+This library is intended to do useful things with IP addresses. The following functions are available:
 
 * (is-it-ipv4? ...)
 * (is-it-ipv6? ...)
