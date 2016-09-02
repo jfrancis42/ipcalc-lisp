@@ -2,7 +2,10 @@
 
 (defpackage #:ipcalc
   (:use #:cl)
-  (:export :ipv6-addr-compress
+  (:export :is-it-ipv4?
+	   :is-it-ipv6?
+	   :ipv6-addr-compress
+	   :ipv6-addr-expand
 	   :calc-network-addr
 	   :calc-broadcast-addr
 	   :ip-info
