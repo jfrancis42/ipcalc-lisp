@@ -37,7 +37,8 @@ CL-USER>
 
 (calc-network-addr) and (calc-broadcast-addr) require an address and netmask, and return the network address or the broadcast address respectively:
 
-```CL-USER> (ipcalc:calc-network-addr "10.11.12.13/19")
+```
+CL-USER> (ipcalc:calc-network-addr "10.11.12.13/19")
 "10.11.0.0"
 CL-USER> (ipcalc:calc-broadcast-addr "10.11.12.13/19")
 "10.11.31.255"
