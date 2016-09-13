@@ -2,8 +2,6 @@
 
 (in-package #:ipcalc)
 
-;;; "ipcalc" goes here. Hacks and glory await!
-
 (defun ip-or (a b) (if (or (equal a 1) (equal b 1)) 1 0))
 (defun ip-not (n) (if (equal n 0) 1 0))
 (defun ip-and (a b) (logand a b))
