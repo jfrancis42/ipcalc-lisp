@@ -134,7 +134,7 @@ address (or netmask) in to a list of binary digits."
   "Compress a fully-specified IPv6 address down to it's canonical
 form."
   (setf addr (ipv6-addr-expand addr))
-  (let* ((zeros (map 'list (lambda (n) (if (equal n "0") 1 0)) (split-sequence:split-sequence #\: (bin-to-ipv6-string (ipv6-full-to-bin addr)))))
+  (let* ((zeros (map 'list (lambda (n) (if (equal n "0") 1 0)) (split-sequence:split-sequence #\: (bin-to-ipv6-string (ipv6-to-bin addr)))))
 	 (sequences (ipv6-addr-compress-helper (copy-list zeros)))
 	 (addr-parts (map 'list (lambda (n) (format nil "~X" (parse-integer n :radix 16))) (split-sequence:split-sequence #\: addr)))
 	 (rep-length (first (sort (copy-list sequences) #'>)))
