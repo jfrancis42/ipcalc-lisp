@@ -76,3 +76,11 @@ CL-USER> (ipcalc:cidr-to-ipv6-netmask 64)
 "FFFF:FFFF:FFFF:FFFF::"
 CL-USER>
 ```
+
+## ToDo
+* Convert IPv4 address to integer
+* Convert integer to IPv4 address
+* Convert IPv6 address to integer
+* Convert integer to IPv6 address
+* Return a list of usable addresses in a given subnet
+* RFC6052 conversion (embedding IPv4 addresses in IPv6)
