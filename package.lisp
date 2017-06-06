@@ -13,4 +13,7 @@
 	   :multicast-addr?
 	   :cidr-to-ipv4-netmask
 	   :cidr-to-ipv6-netmask
+	   :ip-to-int
+	   :int-to-ipv4
+	   :int-to-ipv6
 	   ))

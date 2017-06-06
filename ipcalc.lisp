@@ -91,7 +91,10 @@ length 'desired-length'."
       (let* ((nums (split-sequence:split-sequence #\: addr))
 	     (len (length nums))
 	     (missing (position "" nums :test #'equal)))
-	(if (< len 8)
+	(when (eq 3 len)
+	  (setf (first nums) "0")
+	  (setf missing 1))
+	(when (< len 8)
 	    (progn
 	      (setf (nth missing nums) (make-list (- 9 len) :initial-element "0"))
 	      (let ((almost (join (alexandria:flatten nums) ":")))
@@ -99,9 +102,46 @@ length 'desired-length'."
 		    (concatenate 'string almost "0")
 		    almost)))))))
 
+(defun ipv6-to-int (addr)
+  "Convert the string representation of an IPv6 address (or netmask)
+to a an integer."
+  (let ((nums (map 'list (lambda (n) (parse-integer n :radix 16))
+		   (split-sequence:split-sequence #\: (ipv6-addr-expand addr)))))
+    (+
+     (nth 7 nums)
+     (* (expt 2 16) (nth 6 nums))
+     (* (expt 2 32) (nth 5 nums))
+     (* (expt 2 48) (nth 4 nums))
+     (* (expt 2 64) (nth 3 nums))
+     (* (expt 2 80) (nth 2 nums))
+     (* (expt 2 96) (nth 1 nums))
+     (* (expt 2 112) (nth 0 nums)))))
+
+(defun int-to-ipv6 (num)
+  "Convert an integer into a compressed IPv6 address string. Yes, this
+could be re-written much mo' betta, but for the moment, it works."
+  (let* ((one (truncate (* 1.0 (/ num (expt 2 112)))))
+	 (one-c (* one (expt 2 112)))
+	 (two (truncate (* 1.0 (/ (- num one-c) (expt 2 96)))))
+	 (two-c (* two (expt 2 96)))
+	 (three (truncate (* 1.0 (/ (- num one-c two-c) (expt 2 80)))))
+	 (three-c (* three (expt 2 80)))
+	 (four (truncate (* 1.0 (/ (- num one-c two-c three-c) (expt 2 64)))))
+	 (four-c (* four (expt 2 64)))
+	 (five (truncate (* 1.0 (/ (- num one-c two-c three-c four-c) (expt 2 48)))))
+	 (five-c (* five (expt 2 48)))
+	 (six (truncate (* 1.0 (/ (- num one-c two-c three-c four-c five-c) (expt 2 32)))))
+	 (six-c (* six (expt 2 32)))
+	 (seven (truncate (* 1.0 (/ (- num one-c two-c three-c four-c five-c six-c) (expt 2 16)))))
+	 (seven-c (* seven (expt 2 16)))
+	 (eight (- num one-c two-c three-c four-c five-c six-c seven-c)))
+    (ipv6-addr-compress
+     (format nil "~4,'0X:~4,'0X:~4,'0X:~4,'0X:~4,'0X:~4,'0X:~4,'0X:~4,'0X"
+	     one two three four five six seven eight))))
+
 (defun ipv6-to-bin (addr)
   "Convert the string representation of a fully-expanded IPv6
-address (or netmask) in to a list of binary digits."
+address (or netmask) to a list of binary digits."
   (let ((nums (map 'list (lambda (n) (parse-integer n :radix 16))
 		   (split-sequence:split-sequence #\: (ipv6-addr-expand addr)))))
     (concatenate 'list
@@ -181,6 +221,28 @@ bits, else IPv4."
       t
       nil))
 
+(defun ipv4-to-int (addr)
+  "Convert the string representation of a fully-expanded IPv6
+address (or netmask) to a an integer."
+  (let ((nums (map 'list (lambda (n) (parse-integer n))
+		   (split-sequence:split-sequence #\. addr))))
+    (+
+     (nth 3 nums)
+     (* (expt 2 16) (nth 2 nums))
+     (* (expt 2 32) (nth 1 nums))
+     (* (expt 2 48) (nth 0 nums)))))
+
+(defun int-to-ipv4 (num)
+  "Convert an integer into an IPv4 address string."
+  (let* ((one (truncate (* 1.0 (/ num (expt 2 48)))))
+	 (one-c (* one (expt 2 48)))
+	 (two (truncate (* 1.0 (/ (- num one-c) (expt 2 32)))))
+	 (two-c (* two (expt 2 32)))
+	 (three (truncate (* 1.0 (/ (- num one-c two-c) (expt 2 16)))))
+	 (three-c (* three (expt 2 16)))
+	 (four (- num one-c two-c three-c)))
+    (format nil "~A.~A.~A.~A" one two three four)))
+
 (defun ipv4-to-bin (addr)
   "Convert the string representation of an IPv4 address (or netmask) in
 dotted-quad format to a list of binary digits."
@@ -190,7 +252,15 @@ dotted-quad format to a list of binary digits."
 		 (int-to-binary (nth 0 nums) 8) (int-to-binary (nth 1 nums) 8)
 		 (int-to-binary (nth 2 nums) 8) (int-to-binary (nth 3 nums) 8))))
 
+(defun ip-to-int (addr)
+  "Convert the string representation of an IP address to an int."
+  (if (is-it-ipv6? addr)
+      (ipv6-to-int addr)
+      (ipv4-to-int addr)))
+
 (defun ip-to-bin (addr)
+  "Convert the string representation of an IP address to binary
+digits."
   (if (is-it-ipv6? addr)
       (ipv6-to-bin addr)
       (ipv4-to-bin addr)))
@@ -258,3 +328,4 @@ address or not. (currently only works for IPv4)."
       (if (same-ip-network? ip "224.0.0.0" (cidr-to-ipv4-netmask 4))
 	  t
 	  nil)))
+

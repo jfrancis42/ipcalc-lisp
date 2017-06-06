@@ -15,6 +15,9 @@ This library is intended to do useful things with IP addresses. The following fu
 * (multicast-addr? ...)
 * (cidr-to-ipv4-netmask ...)
 * (cidr-to-ipv6-netmask ...)
+* (ip-to-int ...)
+* (int-to-ipv4 ...)
+* (int-to-ipv6 ...)
 
 All functions other than (multicast-addr?) function with either IPv4 or IPv6 parameters (though, obviously, they can't be mixed). The functions which require both an address and a netmask will accept those parameters in multiple ways. Each of the following calculates the network address for 10.1.0.42/24:
 
@@ -42,6 +45,18 @@ CL-USER> (ipcalc:calc-network-addr "10.11.12.13/19")
 "10.11.0.0"
 CL-USER> (ipcalc:calc-broadcast-addr "10.11.12.13/19")
 "10.11.31.255"
+CL-USER>
+```
+
+(ip-to-int), (int-to-ipv4), and (int-to-ipv6) convert IP addresses to and from their integer representations:
+
+```
+CL-USER> (ipcalc:ip-to-int "2001:b00b:1e5::1")
+603053633991302184961
+CL-USER> (ipcalc:ip-to-int "10.1.0.42")
+167837738
+CL-USER> (ipcalc:int-to-ipv6 603053633991302184961)
+"2001:B00B:1E5::1"
 CL-USER>
 ```
 
