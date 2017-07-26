@@ -2,6 +2,24 @@
 
 (in-package #:ipcalc)
 
+(defvar *pname-list* '("hopopt" "icmp" "igmp" "ggp" "ip-in-ip" "st" "tcp" "cbt" "egp" "igp" "bbn-rcc-mon" 
+		       "nvp-ii" "pup" "argus" "emcon" "xnet" "chaos" "udp" "mux" "dcn-meas" "hmp" "prm" 
+		       "xns-idp" "trunk-1" "trunk-2" "leaf-1" "leaf-2" "rdp" "irtp" "iso-tp4" "netblt" 
+		       "mfe-nsp" "merit-inp" "dccp" "3pc" "idpr" "xtp" "ddp" "idpr-cmtp" "tp++" "il" "ipv6" 
+		       "sdrp" "ipv6-route" "ipv6-frag" "idrp" "rsvp" "gre" "mhrp" "bna" "esp" "ah" "i-nlsp" 
+		       "swipe" "narp" "mobile" "tlsp" "skip" "ipv6-icmp" "ipv6-nonxt" "ipv6-opts" "any" 
+		       "cftp" "any" "sat-expak" "kryptolan" "rvd" "ippc" "any" "sat-mon" "visa" "ipcu" "cpnx" 
+		       "cphb" "wsn" "pvp" "br-sat-mon" "sun-nd" "wb-mon" "wb-expak" "iso-ip" "vmtp" 
+		       "secure-vmtp" "vines" "iptm" "nsfnet-igp" "dgp" "tcf" "eigrp" "ospf" "sprite-rpc" 
+		       "larp" "mtp" "ax.25" "ipip" "micp" "scc-sp" "etherip" "encap" "any" "gmtp" "ifmp"
+		       "pnni" "pim" "aris" "scps" "qnx" "a/n" "ipcomp" "snp" "compaq-peer" "ipx-in-ip" "vrrp" 
+		       "pgm" "any" "l2tp" "ddx" "iatp" "stp" "srp" "uti" "smp" "sm" "ptp" "is-is" "fire" 
+		       "crtp" "crudp" "sscopmce" "iplt" "sps" "pipe" "sctp" "fc" "rsvp-e2e-ignore" 
+		       "mobility" "udplite" "mpls-in-ip" "manet" "hip" "shim6" "wesp" "rohc"))
+
+(defun proto-num-to-name (num)
+  (nth num *pname-list*))
+
 (defun ip-or (a b) (if (or (equal a 1) (equal b 1)) 1 0))
 (defun ip-not (n) (if (equal n 0) 1 0))
 (defun ip-and (a b) (logand a b))
@@ -275,7 +293,7 @@ network part of an address as a list of binary digits."
 broadcast address as a list of binary digits."
   (loop for x in netmask for y in (ip-network addr netmask) collect (ip-or y (ip-not x))))
 
-(defun calc-network-addr (addr &optional (netmask nil))
+(defun calc-network-addr (addr netmask)
   "Given an IP address and a netmask, calculate the network address."
   (let* ((tmp (parse-address addr netmask))
 	 (addr (first tmp))

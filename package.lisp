@@ -16,4 +16,5 @@
 	   :ip-to-int
 	   :int-to-ipv4
 	   :int-to-ipv6
+	   :proto-num-to-name
 	   ))
