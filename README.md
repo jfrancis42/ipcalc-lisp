@@ -92,10 +92,34 @@ CL-USER> (ipcalc:cidr-to-ipv6-netmask 64)
 CL-USER>
 ```
 
+(proto-num-to-name) Converts a integer representing an IP protocol
+number into it's English name:
+
+```
+CL-USER> (ipcalc:proto-num-to-name 6)
+"tcp"
+CL-USER> 
+```
+
+(iana-tcp-service-name) and (iana-udp-service-name) return the IANA
+assigned name (or sometimes the de-facto name) of a service
+represented by the integer port value supplied. If an optional flag is
+t, it also includes an English string for port/proto:
+
+```
+CL-USER> (ipcalc:iana-tcp-service-name 22)
+"ssh"
+CL-USER> (ipcalc:iana-tcp-service-name 22 t)
+"22/tcp (ssh)"
+CL-USER> (ipcalc:iana-tcp-service-name 999)
+NIL
+CL-USER> (ipcalc:iana-tcp-service-name 999 t)
+"999/tcp (unknown)"
+CL-USER>
+```
+
+
+
 ## ToDo
-* Convert IPv4 address to integer
-* Convert integer to IPv4 address
-* Convert IPv6 address to integer
-* Convert integer to IPv6 address
 * Return a list of usable addresses in a given subnet
 * RFC6052 conversion (embedding IPv4 addresses in IPv6)
