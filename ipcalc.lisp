@@ -8,7 +8,7 @@
 		       "nvp-ii" "pup" "argus" "emcon" "xnet" "chaos" "udp" "mux" "dcn-meas" "hmp" "prm" 
 		       "xns-idp" "trunk-1" "trunk-2" "leaf-1" "leaf-2" "rdp" "irtp" "iso-tp4" "netblt" 
 		       "mfe-nsp" "merit-inp" "dccp" "3pc" "idpr" "xtp" "ddp" "idpr-cmtp" "tp++" "il" "ipv6" 
-		       "sdrp" "ipv6-route" "ipv6-frag" "idrp" "rsvp" "gre" "mhrp" "bna" "esp" "ah" "i-nlsp" 
+		       "sdrp" "ipv6-route" "ipv6-frag" "idrp" "rsvp" "gre" "mhrp" "bna" "esp" "ah" "i-nlsp"
 		       "swipe" "narp" "mobile" "tlsp" "skip" "ipv6-icmp" "ipv6-nonxt" "ipv6-opts" "any" 
 		       "cftp" "any" "sat-expak" "kryptolan" "rvd" "ippc" "any" "sat-mon" "visa" "ipcu" "cpnx" 
 		       "cphb" "wsn" "pvp" "br-sat-mon" "sun-nd" "wb-mon" "wb-expak" "iso-ip" "vmtp" 
@@ -42,8 +42,10 @@ form) as the first and second elements."
       (let ((pieces (split-sequence:split-sequence #\/ addr)))
 	(list (first pieces)
 	      (if (is-it-ipv4? addr)
-		  (cidr-to-ipv4-netmask (parse-integer (second pieces)))
-		  (cidr-to-ipv6-netmask (parse-integer (second pieces))))))
+		  (cidr-to-ipv4-netmask
+		   (parse-integer (second pieces)))
+		  (cidr-to-ipv6-netmask
+		   (parse-integer (second pieces))))))
       (list addr
 	    (cond
 	      ((is-it-ipv4? netmask)
@@ -73,20 +75,29 @@ form) as the first and second elements."
   "Convert a list of binary digits into an IPv6 string."
   (string-downcase
    (concatenate 'string
-		(format nil "~4,'0X" (bin-to-dec (subseq n 0 16))) ":" (format nil "~4,'0X" (bin-to-dec (subseq n 16 32))) ":"
-		(format nil "~4,'0X" (bin-to-dec (subseq n 32 48))) ":" (format nil "~4,'0X" (bin-to-dec (subseq n 48 64))) ":"
-		(format nil "~4,'0X" (bin-to-dec (subseq n 64 80))) ":" (format nil "~4,'0X" (bin-to-dec (subseq n 80 96))) ":"
-		(format nil "~4,'0X" (bin-to-dec (subseq n 96 112))) ":" (format nil "~4,'0X" (bin-to-dec (subseq n 112 128)))
+		(format nil "~4,'0X"
+			(bin-to-dec (subseq n 0 16))) ":"
+			(format nil "~4,'0X" (bin-to-dec (subseq n 16 32))) ":"
+			(format nil "~4,'0X" (bin-to-dec (subseq n 32 48))) ":"
+			(format nil "~4,'0X" (bin-to-dec (subseq n 48 64))) ":"
+			(format nil "~4,'0X" (bin-to-dec (subseq n 64 80))) ":"
+			(format nil "~4,'0X" (bin-to-dec (subseq n 80 96))) ":"
+			(format nil "~4,'0X" (bin-to-dec (subseq n 96 112))) ":"
+			(format nil "~4,'0X" (bin-to-dec (subseq n 112 128)))
 		)))
 
 (defun bin-to-ipv6-string (n)
   "Convert a list of binary digits into an IPv6 string."
   (string-downcase
    (concatenate 'string
-		(format nil "~X" (bin-to-dec (subseq n 0 16))) ":" (format nil "~X" (bin-to-dec (subseq n 16 32))) ":"
-		(format nil "~X" (bin-to-dec (subseq n 32 48))) ":" (format nil "~X" (bin-to-dec (subseq n 48 64))) ":"
-		(format nil "~X" (bin-to-dec (subseq n 64 80))) ":" (format nil "~X" (bin-to-dec (subseq n 80 96))) ":"
-		(format nil "~X" (bin-to-dec (subseq n 96 112))) ":" (format nil "~X" (bin-to-dec (subseq n 112 128)))
+		(format nil "~X" (bin-to-dec (subseq n 0 16))) ":"
+		(format nil "~X" (bin-to-dec (subseq n 16 32))) ":"
+		(format nil "~X" (bin-to-dec (subseq n 32 48))) ":"
+		(format nil "~X" (bin-to-dec (subseq n 48 64))) ":"
+		(format nil "~X" (bin-to-dec (subseq n 64 80))) ":"
+		(format nil "~X" (bin-to-dec (subseq n 80 96))) ":"
+		(format nil "~X" (bin-to-dec (subseq n 96 112))) ":"
+		(format nil "~X" (bin-to-dec (subseq n 112 128)))
 		)))
 
 (defun binary-list (n &optional acc)
@@ -102,7 +113,9 @@ form) as the first and second elements."
 length 'desired-length'."
   (let* ((bits (binary-list my-int))
 	 (current-length (length bits)))
-    (concatenate 'list (make-list (- desired-length current-length) :initial-element 0) bits)))
+    (concatenate 'list
+		 (make-list
+		  (- desired-length current-length) :initial-element 0) bits)))
 
 (defun ipv6-addr-expand (addr)
   "Expand a compressed IPv6 address."
@@ -148,11 +161,14 @@ could be re-written much mo' betta, but for the moment, it works."
 	 (three-c (* three (expt 2 80)))
 	 (four (truncate (* 1.0 (/ (- num one-c two-c three-c) (expt 2 64)))))
 	 (four-c (* four (expt 2 64)))
-	 (five (truncate (* 1.0 (/ (- num one-c two-c three-c four-c) (expt 2 48)))))
+	 (five (truncate (* 1.0 (/ (- num one-c two-c three-c four-c)
+				   (expt 2 48)))))
 	 (five-c (* five (expt 2 48)))
-	 (six (truncate (* 1.0 (/ (- num one-c two-c three-c four-c five-c) (expt 2 32)))))
+	 (six (truncate (* 1.0 (/ (- num one-c two-c three-c four-c five-c)
+				  (expt 2 32)))))
 	 (six-c (* six (expt 2 32)))
-	 (seven (truncate (* 1.0 (/ (- num one-c two-c three-c four-c five-c six-c) (expt 2 16)))))
+	 (seven (truncate (* 1.0 (/ (- num one-c two-c three-c four-c five-c six-c)
+				    (expt 2 16)))))
 	 (seven-c (* seven (expt 2 16)))
 	 (eight (- num one-c two-c three-c four-c five-c six-c seven-c)))
     (ipv6-addr-compress
@@ -165,10 +181,14 @@ address (or netmask) to a list of binary digits."
   (let ((nums (map 'list (lambda (n) (parse-integer n :radix 16))
 		   (split-sequence:split-sequence #\: (ipv6-addr-expand addr)))))
     (concatenate 'list
-		 (int-to-binary (nth 0 nums) 16) (int-to-binary (nth 1 nums) 16)
-		 (int-to-binary (nth 2 nums) 16) (int-to-binary (nth 3 nums) 16)
-		 (int-to-binary (nth 4 nums) 16) (int-to-binary (nth 5 nums) 16)
-		 (int-to-binary (nth 6 nums) 16) (int-to-binary (nth 7 nums) 16))))
+		 (int-to-binary (nth 0 nums) 16)
+		 (int-to-binary (nth 1 nums) 16)
+		 (int-to-binary (nth 2 nums) 16)
+		 (int-to-binary (nth 3 nums) 16)
+		 (int-to-binary (nth 4 nums) 16)
+		 (int-to-binary (nth 5 nums) 16)
+		 (int-to-binary (nth 6 nums) 16)
+		 (int-to-binary (nth 7 nums) 16))))
 
 (defun ipv6-addr-compress-helper (seq)
   "The recusive part of ipv6-addr-compress."
@@ -194,21 +214,38 @@ address (or netmask) to a list of binary digits."
   "Compress a fully-specified IPv6 address down to it's canonical
 form."
   (setf addr (ipv6-addr-expand addr))
-  (let* ((zeros (map 'list (lambda (n) (if (equal n "0") 1 0)) (split-sequence:split-sequence #\: (bin-to-ipv6-string (ipv6-to-bin addr)))))
+  (let* ((zeros
+	  (map 'list
+	       (lambda (n)
+		 (if (equal n "0") 1 0))
+	       (split-sequence:split-sequence
+		#\:
+		(bin-to-ipv6-string (ipv6-to-bin addr)))))
 	 (sequences (ipv6-addr-compress-helper (copy-list zeros)))
-	 (addr-parts (map 'list (lambda (n) (format nil "~X" (parse-integer n :radix 16))) (split-sequence:split-sequence #\: addr)))
+	 (addr-parts
+	  (map 'list
+	       (lambda (n)
+		 (format nil "~X"
+			 (parse-integer n :radix 16)))
+	       (split-sequence:split-sequence #\: addr)))
 	 (rep-length (first (sort (copy-list sequences) #'>)))
 	 (rep-pos (position rep-length sequences))
 	 (end-pos (+ rep-pos rep-length))
-	 (almost (cl-ppcre::regex-replace ":$" (cl-ppcre::regex-replace "::+" 
-									(apply #'concatenate 'string
-									       (map 'list (lambda (n) (format nil "~A:" n))
-										    (loop for y from 0 to 7
-										       collect
-											 (if (and (>= y rep-pos) (< y end-pos) (> rep-length 1))
-											     ":"
-											     (nth y addr-parts)))))
-									"::") "")))
+	 (almost
+	  (cl-ppcre::regex-replace
+	   ":$"
+	   (cl-ppcre::regex-replace
+	    "::+" 
+	    (apply #'concatenate 'string
+		   (map 'list (lambda (n) (format nil "~A:" n))
+			(loop for y from 0 to 7
+			   collect
+			     (if (and (>= y rep-pos)
+				      (< y end-pos)
+				      (> rep-length 1))
+				 ":"
+				 (nth y addr-parts)))))
+	    "::") "")))
     (if (and (equal ":" (subseq almost (- (length almost) 1)))
 	     (not (equal "::" (subseq almost (- (length almost) 2)))))
 	(concatenate 'string almost ":")
@@ -223,11 +260,17 @@ bits, else IPv4."
 
 (defun cidr-to-ipv4-netmask (cidr)
   "Convert a CIDR (slash) notation into a list of binary digits."
-  (bin-to-ip-string (concatenate 'list (make-list cidr :initial-element 1) (make-list (- 32 cidr) :initial-element 0))))
+  (bin-to-ip-string
+   (concatenate 'list
+		(make-list cidr :initial-element 1)
+		(make-list (- 32 cidr) :initial-element 0))))
 
 (defun cidr-to-ipv6-netmask (cidr)
   "Convert a CIDR (slash) notation into a list of binary digits."
-  (bin-to-ip-string (concatenate 'list (make-list cidr :initial-element 1) (make-list (- 128 cidr) :initial-element 0))))
+  (bin-to-ip-string
+   (concatenate 'list
+		(make-list cidr :initial-element 1)
+		(make-list (- 128 cidr) :initial-element 0))))
 
 (defun is-it-ipv6? (addr)
   "Returns t if there's a colon in the string, else nil."
@@ -293,7 +336,10 @@ network part of an address as a list of binary digits."
 (defun ip-broadcast (addr netmask)
   "Supplied an address and netmask in binary format, return the
 broadcast address as a list of binary digits."
-  (loop for x in netmask for y in (ip-network addr netmask) collect (ip-or y (ip-not x))))
+  (loop
+     for x in netmask
+     for y in (ip-network addr netmask)
+     collect (ip-or y (ip-not x))))
 
 (defun calc-network-addr (addr netmask)
   "Given an IP address and a netmask, calculate the network address."
@@ -363,6 +409,16 @@ address or not. (currently only works for IPv4)."
 	(if port (format nil "~A/udp (~A)" n name) name)
 	(if port (format nil "~A/udp (unknown)" n)))))
 
+(defun iana-port-name (port proto)
+  "Given a port and protocol, return the common name."
+  (cond
+    ((equal proto 6)
+     (ipcalc:iana-tcp-service-name port t))
+    ((equal proto 17)
+     (ipcalc:iana-udp-service-name port t))
+    (t
+     (format nil "~A/~A" port (ipcalc:proto-num-to-name proto)))))
+  
 (setf (gethash 1 iana-tcp) "tcpmux")
 (setf (gethash 7 iana-tcp) "echo")
 (setf (gethash 7 iana-udp) "echo")
