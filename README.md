@@ -101,6 +101,16 @@ CL-USER> (ipcalc:proto-num-to-name 6)
 CL-USER> 
 ```
 
+(name-to-proto-num) Converts a (case-insensitive) string containing
+the English name of a protocol into the corresponding protocol number
+(or nil if invalid/unknown):
+
+```
+CL-USER> (ipcalc:name-to-proto-num "TCP")
+6
+CL-USER> 
+```
+
 (iana-tcp-service-name) and (iana-udp-service-name) return the IANA
 assigned name (or sometimes the de-facto name) of a service
 represented by the integer port value supplied. If an optional flag is

@@ -17,6 +17,7 @@
 	   :int-to-ipv4
 	   :int-to-ipv6
 	   :proto-num-to-name
+	   :name-to-proto-num
 	   :iana-tcp-service-name
 	   :iana-udp-service-name
 	   :iana-port-name

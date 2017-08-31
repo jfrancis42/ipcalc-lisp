@@ -20,7 +20,18 @@
 		       "mobility" "udplite" "mpls-in-ip" "manet" "hip" "shim6" "wesp" "rohc"))
 
 (defun proto-num-to-name (num)
+  "Given a protocol number, return a string containing it's English
+name (lowercase)."
   (nth num *pname-list*))
+
+(defun name-to-proto-num (proto-name)
+  "Given a string containing an English protocol name, return it's
+number (or nil)."
+  (let* ((name (string-downcase proto-name))
+	 (which (member name *pname-list* :test #'equal)))
+    (if which
+	(- (length *pname-list*) (length which))
+	nil)))
 
 (defun ip-or (a b) (if (or (equal a 1) (equal b 1)) 1 0))
 (defun ip-not (n) (if (equal n 0) 1 0))
