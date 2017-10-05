@@ -359,7 +359,7 @@ broadcast address as a list of binary digits."
 	 (netmask (second tmp)))
     (bin-to-ip-string (ip-network (ip-to-bin addr) (ip-to-bin netmask)))))
 
-(defun calc-broadcast-addr (addr &optional (netmask nil))
+(defun calc-broadcast-addr (addr &optional netmask)
   "Given an IP address and a netmask, calculate the broadcast
 address."
   (let* ((tmp (parse-address addr netmask))
@@ -367,7 +367,7 @@ address."
 	 (netmask (second tmp)))
     (bin-to-ip-string (ip-broadcast (ip-to-bin addr) (ip-to-bin netmask)))))
 
-(defun ip-info (addr &optional (netmask nil))
+(defun ip-info (addr &optional netmask)
   "Given an IP address and a netmask, show me the network and the
 broadcast addresses."
   (let* ((tmp (parse-address addr netmask))
@@ -378,7 +378,7 @@ broadcast addresses."
 	    (calc-broadcast-addr addr netmask)
 	    (calc-network-addr addr netmask))))
 
-(defun same-ip-network? (addr1 addr2 &optional (netmask nil))
+(defun same-ip-network? (addr1 addr2 &optional netmask)
   "Given two IP addresses and a netmask as dotted quad strings, tell
 me if both IP addresses are part of the same network."
   (let* ((tmp1 (parse-address addr1 netmask))
