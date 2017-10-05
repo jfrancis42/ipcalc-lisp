@@ -296,8 +296,8 @@ bits, else IPv4."
       nil))
 
 (defun ipv4-to-int (addr)
-  "Convert the string representation of a fully-expanded IPv6
-address (or netmask) to a an integer."
+  "Convert the string representation of an IPv4 address (or netmask)
+to a an integer."
   (let ((nums (map 'list (lambda (n) (parse-integer n))
 		   (split-sequence:split-sequence #\. addr))))
     (+
@@ -352,7 +352,7 @@ broadcast address as a list of binary digits."
      for y in (ip-network addr netmask)
      collect (ip-or y (ip-not x))))
 
-(defun calc-network-addr (addr netmask)
+(defun calc-network-addr (addr &optional netmask)
   "Given an IP address and a netmask, calculate the network address."
   (let* ((tmp (parse-address addr netmask))
 	 (addr (first tmp))
