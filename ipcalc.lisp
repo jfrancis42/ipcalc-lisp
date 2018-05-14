@@ -357,7 +357,10 @@ broadcast address as a list of binary digits."
   (let* ((tmp (parse-address addr netmask))
 	 (addr (first tmp))
 	 (netmask (second tmp)))
-    (bin-to-ip-string (ip-network (ip-to-bin addr) (ip-to-bin netmask)))))
+    (concatenate 'string
+		 (bin-to-ip-string
+		  (ip-network (ip-to-bin addr) (ip-to-bin netmask)))
+		 "/" netmask)))
 
 (defun calc-broadcast-addr (addr &optional netmask)
   "Given an IP address and a netmask, calculate the broadcast
