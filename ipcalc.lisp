@@ -150,7 +150,7 @@ length 'desired-length'."
   "Convert the string representation of an IPv6 address (or netmask)
 to a an integer."
   (let ((nums (map 'list (lambda (n) (parse-integer n :radix 16))
-		   (split-sequence:split-sequence #\: (ipv6-addr-expand addr)))))
+		   (split-sequence:split-sequence #\: (ipv6-addr-expand (subseq addr 0 (search "/" addr)))))))
     (+
      (nth 7 nums)
      (* (expt 2 16) (nth 6 nums))
@@ -299,14 +299,14 @@ bits, else IPv4."
   "Convert the string representation of an IPv4 address (or netmask)
 to a an integer."
   (let ((nums (map 'list (lambda (n) (parse-integer n))
-		   (split-sequence:split-sequence #\. addr))))
+		   (split-sequence:split-sequence #\. (subseq addr 0 (search "/" addr))))))
     (+
      (nth 3 nums)
      (* (expt 2 16) (nth 2 nums))
      (* (expt 2 32) (nth 1 nums))
      (* (expt 2 48) (nth 0 nums)))))
 
-(defun int-to-ipv4 (num)
+(defun int-to-ipv4-broken (num)
   "Convert an integer into an IPv4 address string."
   (let* ((one (truncate (* 1.0 (/ num (expt 2 48)))))
 	 (one-c (* one (expt 2 48)))
@@ -316,6 +316,15 @@ to a an integer."
 	 (three-c (* three (expt 2 16)))
 	 (four (- num one-c two-c three-c)))
     (format nil "~A.~A.~A.~A" one two three four)))
+
+(defun int-to-ipv4 (num)
+  "Convert an integer into an IPv4 address string. Probably not
+portable. XXX"
+  (format nil "~A.~A.~A.~A"
+	  (ldb (byte 8 48) num)
+	  (ldb (byte 8 32) num)
+	  (ldb (byte 8 16) num)
+	  (ldb (byte 8 0) num)))
 
 (defun ipv4-to-bin (addr)
   "Convert the string representation of an IPv4 address (or netmask) in
@@ -352,15 +361,27 @@ broadcast address as a list of binary digits."
      for y in (ip-network addr netmask)
      collect (ip-or y (ip-not x))))
 
-(defun calc-network-addr (addr &optional netmask)
+(defun calc-network-addr (addr &key netmask show-mask cidr-mask)
   "Given an IP address and a netmask, calculate the network address."
   (let* ((tmp (parse-address addr netmask))
 	 (addr (first tmp))
 	 (netmask (second tmp)))
-    (concatenate 'string
-		 (bin-to-ip-string
-		  (ip-network (ip-to-bin addr) (ip-to-bin netmask)))
-		 "/" netmask)))
+    (cond
+      ((null netmask)
+       nil)
+      (show-mask
+       (concatenate 'string
+		    (bin-to-ip-string
+		     (ip-network (ip-to-bin addr) (ip-to-bin netmask)))
+		    "/" netmask))
+      (cidr-mask
+       (concatenate 'string
+		    (bin-to-ip-string
+		     (ip-network (ip-to-bin addr) (ip-to-bin netmask)))
+		    "/" (format nil "~A" (length (remove 0 (ipcalc::ipv4-to-bin netmask))))))
+      (t
+       (bin-to-ip-string
+	(ip-network (ip-to-bin addr) (ip-to-bin netmask)))))))
 
 (defun calc-broadcast-addr (addr &optional netmask)
   "Given an IP address and a netmask, calculate the broadcast
