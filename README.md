@@ -18,6 +18,7 @@ This library is intended to do useful things with IP addresses. The following fu
 * (ip-to-int ...)
 * (int-to-ipv4 ...)
 * (int-to-ipv6 ...)
+* (iprange-to-cidr ...)
 
 All functions other than (multicast-addr?) function with either IPv4 or IPv6 parameters (though, obviously, they can't be mixed). The functions which require both an address and a netmask will accept those parameters in multiple ways. Each of the following calculates the network address for 10.1.0.42/24:
 
@@ -83,7 +84,8 @@ CL-USER> (iprange-to-cidr "10.11.12.13" "10.12.13.14")
  "10.11.32.0/19" "10.11.16.0/20" "10.11.14.0/23" "10.11.13.0/24"
  "10.11.12.128/25" "10.11.12.64/26" "10.11.12.32/27" "10.11.12.16/28"
  "10.11.12.14/31" "10.11.12.13/32")
-CL-USER> ```
+CL-USER>
+```
 
 (same-ip-network?) takes three parameters (or two, if CIDR notation is used):  address one, address two, and a netmask (if not specified in CIDR notation in one of the first two arguments). Note that if argument one specifies a netmask, that is used. Else the netmask in argument two, else the explicitly supplied netmask. This function returns t if both addresses are part of the same network, else nil. Example:
 
