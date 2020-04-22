@@ -21,4 +21,5 @@
 	   :iana-tcp-service-name
 	   :iana-udp-service-name
 	   :iana-port-name
+	   :iprange-to-cidr
 	   ))

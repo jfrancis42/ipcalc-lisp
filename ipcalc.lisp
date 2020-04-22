@@ -302,28 +302,17 @@ to a an integer."
 		   (split-sequence:split-sequence #\. (subseq addr 0 (search "/" addr))))))
     (+
      (nth 3 nums)
-     (* (expt 2 16) (nth 2 nums))
-     (* (expt 2 32) (nth 1 nums))
-     (* (expt 2 48) (nth 0 nums)))))
-
-(defun int-to-ipv4-broken (num)
-  "Convert an integer into an IPv4 address string."
-  (let* ((one (truncate (* 1.0 (/ num (expt 2 48)))))
-	 (one-c (* one (expt 2 48)))
-	 (two (truncate (* 1.0 (/ (- num one-c) (expt 2 32)))))
-	 (two-c (* two (expt 2 32)))
-	 (three (truncate (* 1.0 (/ (- num one-c two-c) (expt 2 16)))))
-	 (three-c (* three (expt 2 16)))
-	 (four (- num one-c two-c three-c)))
-    (format nil "~A.~A.~A.~A" one two three four)))
+     (* (expt 2 8) (nth 2 nums))
+     (* (expt 2 16) (nth 1 nums))
+     (* (expt 2 24) (nth 0 nums)))))
 
 (defun int-to-ipv4 (num)
   "Convert an integer into an IPv4 address string. Probably not
 portable. XXX"
   (format nil "~A.~A.~A.~A"
-	  (ldb (byte 8 48) num)
-	  (ldb (byte 8 32) num)
+	  (ldb (byte 8 24) num)
 	  (ldb (byte 8 16) num)
+	  (ldb (byte 8 8) num)
 	  (ldb (byte 8 0) num)))
 
 (defun ipv4-to-bin (addr)
@@ -378,7 +367,7 @@ broadcast address as a list of binary digits."
        (concatenate 'string
 		    (bin-to-ip-string
 		     (ip-network (ip-to-bin addr) (ip-to-bin netmask)))
-		    "/" (format nil "~A" (length (remove 0 (ipcalc::ipv4-to-bin netmask))))))
+		    "/" (format nil "~A" (length (remove 0 (:ipv4-to-bin netmask))))))
       (t
        (bin-to-ip-string
 	(ip-network (ip-to-bin addr) (ip-to-bin netmask)))))))
@@ -430,6 +419,33 @@ address or not. (currently only works for IPv4)."
 	  t
 	  nil)))
 
+(defun iprange-to-cidr (ip-start ip-end)
+  (let ((start-r (ip-to-int ip-start))
+	(end-r (ip-to-int ip-end))
+	(x 0) (ip 0) (result nil) (max-size 0)
+	(mask 0) (max-diff 0) (mask-base))
+    (loop while (>= end-r start-r)
+       do
+	 (setf max-size 32)
+	 (loop while (> max-size 0)
+	    do
+	      (setf mask (- (expt 2 32) (expt 2 (- 32 (- max-size 1)))))
+	      (setf mask-base (logand start-r mask))
+	      (unless (= mask-base start-r)
+		(return))
+	      (decf max-size))
+	 (setf x (/ (log (+ 1 (- end-r start-r))) (log 2)))
+	 (setf max-diff (floor (- 32 (floor x))))
+	 (when (< max-size max-diff)
+	   (setf max-size max-diff) )
+	 (setf ip (int-to-ipv4 start-r))
+	 (push (cons ip max-size) result)
+	 (setf start-r (+ start-r (expt 2 (- 32 max-size)))))
+    (mapcar
+     (lambda (ipr)
+       (format nil "~A/~A" (car ipr) (cdr ipr)))
+     result)))
+
 (defun iana-tcp-service-name (n &optional port)
   "Returns the IANA TCP service name for the integer port specified."
   (let ((name (gethash n iana-tcp)))
@@ -448,11 +464,11 @@ address or not. (currently only works for IPv4)."
   "Given a port and protocol, return the common name."
   (cond
     ((equal proto 6)
-     (ipcalc:iana-tcp-service-name port t))
+     (iana-tcp-service-name port t))
     ((equal proto 17)
-     (ipcalc:iana-udp-service-name port t))
+     (iana-udp-service-name port t))
     (t
-     (format nil "~A/~A" port (ipcalc:proto-num-to-name proto)))))
+     (format nil "~A/~A" port (proto-num-to-name proto)))))
   
 (setf (gethash 1 iana-tcp) "tcpmux")
 (setf (gethash 7 iana-tcp) "echo")

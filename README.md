@@ -72,6 +72,19 @@ NIL
 CL-USER>
 ```
 
+(iprange-to-cidr) is a function accepts an IP range (lower IP and
+upper IP) and returns the smallest possible set of CIDR blocks that
+represent that range:
+
+```
+CL-USER> (iprange-to-cidr "10.11.12.13" "10.12.13.14")
+("10.12.13.14/32" "10.12.13.12/31" "10.12.13.8/30" "10.12.13.0/29"
+ "10.12.12.0/24" "10.12.8.0/22" "10.12.0.0/21" "10.11.128.0/17" "10.11.64.0/18"
+ "10.11.32.0/19" "10.11.16.0/20" "10.11.14.0/23" "10.11.13.0/24"
+ "10.11.12.128/25" "10.11.12.64/26" "10.11.12.32/27" "10.11.12.16/28"
+ "10.11.12.14/31" "10.11.12.13/32")
+CL-USER> ```
+
 (same-ip-network?) takes three parameters (or two, if CIDR notation is used):  address one, address two, and a netmask (if not specified in CIDR notation in one of the first two arguments). Note that if argument one specifies a netmask, that is used. Else the netmask in argument two, else the explicitly supplied netmask. This function returns t if both addresses are part of the same network, else nil. Example:
 
 ```
