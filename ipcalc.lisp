@@ -420,6 +420,8 @@ address or not. (currently only works for IPv4)."
 	  nil)))
 
 (defun iprange-to-cidr (ip-start ip-end)
+  "Given a range of IP addresses, return the smallest possible number
+of CIDR blocks that represent that range."
   (let ((start-r (ip-to-int ip-start))
 	(end-r (ip-to-int ip-end))
 	(x 0) (ip 0) (result nil) (max-size 0)
