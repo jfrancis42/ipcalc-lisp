@@ -367,7 +367,7 @@ broadcast address as a list of binary digits."
        (concatenate 'string
 		    (bin-to-ip-string
 		     (ip-network (ip-to-bin addr) (ip-to-bin netmask)))
-		    "/" (format nil "~A" (length (remove 0 (:ipv4-to-bin netmask))))))
+		    "/" (format nil "~A" (length (remove 0 (ipv4-to-bin netmask))))))
       (t
        (bin-to-ip-string
 	(ip-network (ip-to-bin addr) (ip-to-bin netmask)))))))
@@ -389,7 +389,7 @@ broadcast addresses."
     (format t "Address: ~A~%Netmask: ~A~%Broadcast: ~A~%Network: ~A~%"
 	    addr netmask
 	    (calc-broadcast-addr addr netmask)
-	    (calc-network-addr addr netmask))))
+	    (calc-network-addr addr :netmask netmask))))
 
 (defun same-ip-network? (addr1 addr2 &optional netmask)
   "Given two IP addresses and a netmask as dotted quad strings, tell
