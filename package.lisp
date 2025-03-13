@@ -22,4 +22,5 @@
 	   :iana-udp-service-name
 	   :iana-port-name
 	   :iprange-to-cidr
+	   :rfc1918-addr?
 	   ))

@@ -37,6 +37,7 @@ number (or nil)."
 (defun ip-not (n) (if (equal n 0) 1 0))
 (defun ip-and (a b) (logand a b))
 
+; todo: use jeffutils (join)
 (defun join (stuff separator)
   "Join a list of strings with a separator (like ruby string.join())."
   (with-output-to-string (out)
@@ -409,6 +410,12 @@ me if both IP addresses are part of the same network."
 	 (ip-network (ip-to-bin addr2) (ip-to-bin netmask)))
 	t
 	nil)))
+
+(defun rfc1918-addr? (ip)
+  "Is this IP address in RFC 1918 address space?"
+  (or (same-ip-network? ip "10.0.0.0" "255.0.0.0")
+      (same-ip-network? ip "172.16.0.0" "255.240.0.0")
+      (same-ip-network? ip "192.168.0.0" "255.255.0.0")))
 
 (defun multicast-addr? (ip)
   "Given a dotted quad string IP address, tell me if it's a multicast
