@@ -4,20 +4,22 @@
 
 (defvar iana-tcp (make-hash-table :test #'equal))
 (defvar iana-udp (make-hash-table :test #'equal))
-(defvar *pname-list* '("hopopt" "icmp" "igmp" "ggp" "ip-in-ip" "st" "tcp" "cbt" "egp" "igp" "bbn-rcc-mon" 
-		       "nvp-ii" "pup" "argus" "emcon" "xnet" "chaos" "udp" "mux" "dcn-meas" "hmp" "prm" 
-		       "xns-idp" "trunk-1" "trunk-2" "leaf-1" "leaf-2" "rdp" "irtp" "iso-tp4" "netblt" 
-		       "mfe-nsp" "merit-inp" "dccp" "3pc" "idpr" "xtp" "ddp" "idpr-cmtp" "tp++" "il" "ipv6" 
-		       "sdrp" "ipv6-route" "ipv6-frag" "idrp" "rsvp" "gre" "mhrp" "bna" "esp" "ah" "i-nlsp"
-		       "swipe" "narp" "mobile" "tlsp" "skip" "ipv6-icmp" "ipv6-nonxt" "ipv6-opts" "any" 
-		       "cftp" "any" "sat-expak" "kryptolan" "rvd" "ippc" "any" "sat-mon" "visa" "ipcu" "cpnx" 
-		       "cphb" "wsn" "pvp" "br-sat-mon" "sun-nd" "wb-mon" "wb-expak" "iso-ip" "vmtp" 
-		       "secure-vmtp" "vines" "iptm" "nsfnet-igp" "dgp" "tcf" "eigrp" "ospf" "sprite-rpc" 
-		       "larp" "mtp" "ax.25" "ipip" "micp" "scc-sp" "etherip" "encap" "any" "gmtp" "ifmp"
-		       "pnni" "pim" "aris" "scps" "qnx" "a/n" "ipcomp" "snp" "compaq-peer" "ipx-in-ip" "vrrp" 
-		       "pgm" "any" "l2tp" "ddx" "iatp" "stp" "srp" "uti" "smp" "sm" "ptp" "is-is" "fire" 
-		       "crtp" "crudp" "sscopmce" "iplt" "sps" "pipe" "sctp" "fc" "rsvp-e2e-ignore" 
-		       "mobility" "udplite" "mpls-in-ip" "manet" "hip" "shim6" "wesp" "rohc"))
+(defvar *pname-list* '("hopopt" "icmp" "igmp" "ggp" "ip-in-ip" "st" "tcp" "cbt" "egp" "igp"
+		       "bbn-rcc-mon" "nvp-ii" "pup" "argus" "emcon" "xnet" "chaos" "udp" "mux"
+		       "dcn-meas" "hmp" "prm" "xns-idp" "trunk-1" "trunk-2" "leaf-1" "leaf-2"
+		       "rdp" "irtp" "iso-tp4" "netblt" "mfe-nsp" "merit-inp" "dccp" "3pc" "idpr"
+		       "xtp" "ddp" "idpr-cmtp" "tp++" "il" "ipv6" "sdrp" "ipv6-route" "ipv6-frag"
+		       "idrp" "rsvp" "gre" "mhrp" "bna" "esp" "ah" "i-nlsp" "swipe" "narp"
+		       "mobile" "tlsp" "skip" "ipv6-icmp" "ipv6-nonxt" "ipv6-opts" "any" "cftp"
+		       "any" "sat-expak" "kryptolan" "rvd" "ippc" "any" "sat-mon" "visa" "ipcu"
+		       "cpnx" "cphb" "wsn" "pvp" "br-sat-mon" "sun-nd" "wb-mon" "wb-expak" "iso-ip"
+		       "vmtp" "secure-vmtp" "vines" "iptm" "nsfnet-igp" "dgp" "tcf" "eigrp" "ospf"
+		       "sprite-rpc" "larp" "mtp" "ax.25" "ipip" "micp" "scc-sp" "etherip" "encap"
+		       "any" "gmtp" "ifmp" "pnni" "pim" "aris" "scps" "qnx" "a/n" "ipcomp" "snp"
+		       "compaq-peer" "ipx-in-ip" "vrrp" "pgm" "any" "l2tp" "ddx" "iatp" "stp" "srp"
+		       "uti" "smp" "sm" "ptp" "is-is" "fire" "crtp" "crudp" "sscopmce" "iplt" "sps"
+		       "pipe" "sctp" "fc" "rsvp-e2e-ignore" "mobility" "udplite" "mpls-in-ip"
+		       "manet" "hip" "shim6" "wesp" "rohc"))
 
 (defun proto-num-to-name (num)
   "Given a protocol number, return a string containing it's English
@@ -37,21 +39,13 @@ number (or nil)."
 (defun ip-not (n) (if (equal n 0) 1 0))
 (defun ip-and (a b) (logand a b))
 
-; todo: use jeffutils (join)
-(defun join (stuff separator)
-  "Join a list of strings with a separator (like ruby string.join())."
-  (with-output-to-string (out)
-    (loop (princ (pop stuff) out)
-       (unless stuff (return))
-       (princ separator out))))
-
 (defun parse-address (addr netmask)
   "Pass an address and a netmask, and this function will figure out if
 the address is just an address, or an address/CIDR, and passes back a
 list consisting of a separate address and netmask (in fully-expanded
 form) as the first and second elements."
   (if (search "/" addr)
-      (let ((pieces (split-sequence:split-sequence #\/ addr)))
+      (let ((pieces (split-sequence #\/ addr)))
 	(list (first pieces)
 	      (if (is-it-ipv4? addr)
 		  (cidr-to-ipv4-netmask
@@ -69,7 +63,7 @@ form) as the first and second elements."
 	      ((is-it-ipv4? addr)
 	       (cidr-to-ipv4-netmask (parse-integer netmask)))
 	      ((is-it-ipv6? addr)
-	       (cidr-to-ipv6-netmask (parse-integer netmask)))))))	
+	       (cidr-to-ipv6-netmask (parse-integer netmask)))))))
 
 (defun bin-to-dec (lst)
   "Convert a list of binary digits into a number."
@@ -133,10 +127,10 @@ length 'desired-length'."
   "Expand a compressed IPv6 address."
   (if (not (search "::" addr))
       addr
-      (let* ((nums (split-sequence:split-sequence #\: addr))
+      (let* ((nums (split-sequence #\: addr))
 	     (len (length nums))
 	     (missing (position "" nums :test #'equal)))
-	(when (eq 3 len)
+	(when (= 3 len)
 	  (setf (first nums) "0")
 	  (setf missing 1))
 	(when (< len 8)
@@ -151,7 +145,7 @@ length 'desired-length'."
   "Convert the string representation of an IPv6 address (or netmask)
 to a an integer."
   (let ((nums (map 'list (lambda (n) (parse-integer n :radix 16))
-		   (split-sequence:split-sequence #\: (ipv6-addr-expand (subseq addr 0 (search "/" addr)))))))
+		   (split-sequence #\: (ipv6-addr-expand (subseq addr 0 (or (search "/" addr) (length addr))))))))
     (+
      (nth 7 nums)
      (* (expt 2 16) (nth 6 nums))
@@ -163,8 +157,7 @@ to a an integer."
      (* (expt 2 112) (nth 0 nums)))))
 
 (defun int-to-ipv6 (num)
-  "Convert an integer into a compressed IPv6 address string. Yes, this
-could be re-written much mo' betta, but for the moment, it works."
+  "Convert an integer into a compressed IPv6 address string."
   (let* ((one (truncate (* 1.0 (/ num (expt 2 112)))))
 	 (one-c (* one (expt 2 112)))
 	 (two (truncate (* 1.0 (/ (- num one-c) (expt 2 96)))))
@@ -191,7 +184,7 @@ could be re-written much mo' betta, but for the moment, it works."
   "Convert the string representation of a fully-expanded IPv6
 address (or netmask) to a list of binary digits."
   (let ((nums (map 'list (lambda (n) (parse-integer n :radix 16))
-		   (split-sequence:split-sequence #\: (ipv6-addr-expand addr)))))
+		   (split-sequence #\: (ipv6-addr-expand addr)))))
     (concatenate 'list
 		 (int-to-binary (nth 0 nums) 16)
 		 (int-to-binary (nth 1 nums) 16)
@@ -230,7 +223,7 @@ form."
 	  (map 'list
 	       (lambda (n)
 		 (if (equal n "0") 1 0))
-	       (split-sequence:split-sequence
+	       (split-sequence
 		#\:
 		(bin-to-ipv6-string (ipv6-to-bin addr)))))
 	 (sequences (ipv6-addr-compress-helper (copy-list zeros)))
@@ -239,7 +232,7 @@ form."
 	       (lambda (n)
 		 (format nil "~X"
 			 (parse-integer n :radix 16)))
-	       (split-sequence:split-sequence #\: addr)))
+	       (split-sequence #\: addr)))
 	 (rep-length (first (sort (copy-list sequences) #'>)))
 	 (rep-pos (position rep-length sequences))
 	 (end-pos (+ rep-pos rep-length))
@@ -247,7 +240,7 @@ form."
 	  (cl-ppcre::regex-replace
 	   ":$"
 	   (cl-ppcre::regex-replace
-	    "::+" 
+	    "::+"
 	    (apply #'concatenate 'string
 		   (map 'list (lambda (n) (format nil "~A:" n))
 			(loop for y from 0 to 7
@@ -300,7 +293,7 @@ bits, else IPv4."
   "Convert the string representation of an IPv4 address (or netmask)
 to a an integer."
   (let ((nums (map 'list (lambda (n) (parse-integer n))
-		   (split-sequence:split-sequence #\. (subseq addr 0 (search "/" addr))))))
+		   (split-sequence #\. (subseq addr 0 (or (search "/" addr) (length addr)))))))
     (+
      (nth 3 nums)
      (* (expt 2 8) (nth 2 nums))
@@ -308,8 +301,7 @@ to a an integer."
      (* (expt 2 24) (nth 0 nums)))))
 
 (defun int-to-ipv4 (num)
-  "Convert an integer into an IPv4 address string. Probably not
-portable. XXX"
+  "Convert an integer into an IPv4 address string."
   (format nil "~A.~A.~A.~A"
 	  (ldb (byte 8 24) num)
 	  (ldb (byte 8 16) num)
@@ -320,7 +312,7 @@ portable. XXX"
   "Convert the string representation of an IPv4 address (or netmask) in
 dotted-quad format to a list of binary digits."
   (let ((nums (map 'list (lambda (n) (parse-integer n))
-		   (split-sequence:split-sequence #\. addr))))
+		   (split-sequence #\. addr))))
     (concatenate 'list
 		 (int-to-binary (nth 0 nums) 8) (int-to-binary (nth 1 nums) 8)
 		 (int-to-binary (nth 2 nums) 8) (int-to-binary (nth 3 nums) 8))))
@@ -402,7 +394,7 @@ me if both IP addresses are part of the same network."
 	 (addr2 (first tmp2))
 	 (netmask2 (second tmp2)))
     (if (not netmask)
-	(progn 
+	(progn
 	  (if netmask1 (setf netmask netmask1))
 	  (if netmask2 (setf netmask netmask2))))
     (if (equal
@@ -455,6 +447,18 @@ of CIDR blocks that represent that range."
        (format nil "~A/~A" (car ipr) (cdr ipr)))
      result)))
 
+(defun cidr-to-iprange (cidr)
+  "Convert a CIDR block (e.g., '192.168.1.0/24') to (start-int
+. end-int)."
+  (let* ((parts (split-sequence #\/ cidr))
+         (ip-str (first parts))
+         (prefix (parse-integer (second parts)))
+         (ip-int (ipv4-to-int ip-str))
+         (mask (lognot (1- (ash 1 (- 32 prefix)))))
+         (network (logand ip-int mask))
+         (broadcast (logior network (lognot mask))))
+    (cons network broadcast)))
+
 (defun iana-tcp-service-name (n &optional port)
   "Returns the IANA TCP service name for the integer port specified."
   (let ((name (gethash n iana-tcp)))
@@ -478,7 +482,8 @@ of CIDR blocks that represent that range."
      (iana-udp-service-name port t))
     (t
      (format nil "~A/~A" port (proto-num-to-name proto)))))
-  
+
+
 (setf (gethash 1 iana-tcp) "tcpmux")
 (setf (gethash 7 iana-tcp) "echo")
 (setf (gethash 7 iana-udp) "echo")
@@ -748,7 +753,6 @@ of CIDR blocks that represent that range."
 (setf (gethash 2000 iana-tcp) "cisco-sccp")
 (setf (gethash 2000 iana-udp) "cisco-sccp")
 (setf (gethash 2010 iana-tcp) "search")
-(setf (gethash 2010 iana-tcp) "pipe-server")
 (setf (gethash 2049 iana-tcp) "nfs")
 (setf (gethash 2049 iana-udp) "nfs")
 (setf (gethash 2086 iana-tcp) "gnunet")
@@ -939,6 +943,7 @@ of CIDR blocks that represent that range."
 (setf (gethash 2105 iana-tcp) "eklogin")
 (setf (gethash 2111 iana-tcp) "kx")
 (setf (gethash 2121 iana-tcp) "iprop")
+
 (setf (gethash 871 iana-tcp) "supfilesrv")
 (setf (gethash 1127 iana-tcp) "supfiledbg")
 (setf (gethash 98 iana-tcp) "linuxconf")
@@ -960,7 +965,6 @@ of CIDR blocks that represent that range."
 (setf (gethash 1314 iana-tcp) "xtelw")
 (setf (gethash 1529 iana-tcp) "support")
 (setf (gethash 2003 iana-tcp) "cfinger")
-(setf (gethash 2121 iana-tcp) "frox")
 (setf (gethash 2150 iana-tcp) "ninstall")
 (setf (gethash 2150 iana-udp) "ninstall")
 (setf (gethash 2600 iana-tcp) "zebrasrv")

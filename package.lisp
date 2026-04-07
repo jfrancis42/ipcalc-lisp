@@ -2,8 +2,13 @@
 
 (defpackage #:ipcalc
   (:use #:cl)
+  (:import-from :jeffutils
+                :join)
+  (:import-from :split-sequence
+		:split-sequence)
   (:export :is-it-ipv4?
 	   :is-it-ipv6?
+	   :parse-address
 	   :ipv6-addr-compress
 	   :ipv6-addr-expand
 	   :calc-network-addr
@@ -22,5 +27,6 @@
 	   :iana-udp-service-name
 	   :iana-port-name
 	   :iprange-to-cidr
+	   :cidr-to-iprange
 	   :rfc1918-addr?
 	   ))

@@ -6,8 +6,8 @@
   :license "MIT, see file LICENSE"
   :depends-on (#:split-sequence
                #:alexandria
+               #:jeffutils
                #:cl-ppcre)
   :serial t
   :components ((:file "package")
                (:file "ipcalc")))
-
