@@ -29,4 +29,22 @@
 	   :iprange-to-cidr
 	   :cidr-to-iprange
 	   :rfc1918-addr?
+	   :netmask-to-cidr
+	   :valid-netmask?
+	   :ip-in-network?
+	   :network-size
+	   :usable-host-count
+	   :first-host
+	   :last-host
+	   :networks-overlap?
+	   :network-contains-network?
+	   :supernet
+	   :split-network
+	   :collapse-networks
+	   :loopback-addr?
+	   :link-local-addr?
+	   :unspecified-addr?
+	   :unique-local-addr?
+	   :wildcard-mask
+	   :reverse-dns-ptr
 	   ))

@@ -2,54 +2,171 @@
 A Common Lisp library for manipulating and calculating IPv4 and IPv6
 network addresses.
 
-This library is intended to do useful things with IP addresses. The following functions are available:
+## Functions
 
-* (is-it-ipv4? ...)
-* (is-it-ipv6? ...)
-* (ipv6-addr-compress ...)
-* (ipv6-addr-expand ...)
-* (calc-network-addr ...)
-* (calc-broadcast-addr ...)
-* (ip-info ...)
-* (same-ip-network? ...)
-* (multicast-addr? ...)
-* (cidr-to-ipv4-netmask ...)
-* (cidr-to-ipv6-netmask ...)
-* (ip-to-int ...)
-* (int-to-ipv4 ...)
-* (int-to-ipv6 ...)
-* (iprange-to-cidr ...)
+### Address Type Detection
 
-All functions other than (multicast-addr?) function with either IPv4 or IPv6 parameters (though, obviously, they can't be mixed). The functions which require both an address and a netmask will accept those parameters in multiple ways. Each of the following calculates the network address for 10.1.0.42/24:
+* `(is-it-ipv4? addr)` — Returns t if addr contains a dot (IPv4 heuristic)
+* `(is-it-ipv6? addr)` — Returns t if addr contains a colon (IPv6 heuristic)
 
-* (calc-network-addr "10.1.0.42/24")
-* (calc-network-addr "10.1.0.42/255.255.255.0")
-* (calc-network-addr "10.1.0.42" "24")
-* (calc-network-addr "10.1.0.42" "255.255.255.0")
+### Address Parsing & Conversion
 
-The functions (is-it-ipv4?) and (is-it-ipv6?) each require a single parameter: a network address string. This function does a very simple string match to look for either "." or ":" as part of the supplied string, and returns t or nil based on that test. These functions to not check for 100% properly specified addresses.
+* `(parse-address addr netmask)` — Parse address with netmask in multiple formats; returns `(address expanded-netmask)`
+* `(ip-to-int addr)` — Convert IP address string to integer (IPv4 or IPv6)
+* `(int-to-ipv4 num)` — Convert integer to IPv4 dotted-quad string
+* `(int-to-ipv6 num)` — Convert integer to compressed IPv6 string
 
-(ipv6-addr-compress) and (ipv6-addr-expand) both expect a single parameter: an IPv6 network address string. The functions respectively compress or expand the address following the RFC guidelines. Example:
+### IPv6 Normalization
+
+* `(ipv6-addr-expand addr)` — Expand compressed IPv6 address to full form
+* `(ipv6-addr-compress addr)` — Compress IPv6 address to canonical form (RFC 5952)
 
 ```
 CL-USER> (ipcalc:ipv6-addr-compress "2001:b00b:1e5:0:0:0:0:1")
 "2001:B00B:1E5::1"
 CL-USER> (ipcalc:ipv6-addr-expand "2001:B00B:1E5::1")
 "2001:B00B:1E5:0:0:0:0:1"
-CL-USER>
 ```
 
-(calc-network-addr) and (calc-broadcast-addr) require an address and netmask, and return the network address or the broadcast address respectively:
+### Network Calculations
+
+* `(calc-network-addr addr &key netmask show-mask cidr-mask)` — Calculate network address
+* `(calc-broadcast-addr addr &optional netmask)` — Calculate broadcast address
+* `(ip-info addr &optional netmask)` — Print address, netmask, broadcast, and network address
+* `(cidr-to-ipv4-netmask cidr)` — Convert integer CIDR prefix to IPv4 dotted-quad netmask
+* `(cidr-to-ipv6-netmask cidr)` — Convert integer CIDR prefix to IPv6 netmask string
+* `(netmask-to-cidr mask)` — Convert netmask string to CIDR prefix length integer
 
 ```
 CL-USER> (ipcalc:calc-network-addr "10.11.12.13/19")
 "10.11.0.0"
 CL-USER> (ipcalc:calc-broadcast-addr "10.11.12.13/19")
 "10.11.31.255"
-CL-USER>
+CL-USER> (ipcalc:cidr-to-ipv4-netmask 24)
+"255.255.255.0"
+CL-USER> (ipcalc:netmask-to-cidr "255.255.255.0")
+24
+CL-USER> (ipcalc:cidr-to-ipv6-netmask 64)
+"FFFF:FFFF:FFFF:FFFF::"
 ```
 
-(ip-to-int), (int-to-ipv4), and (int-to-ipv6) convert IP addresses to and from their integer representations:
+Functions that require both an address and netmask accept them in multiple
+forms. Each of the following calculates the network address for 10.1.0.42/24:
+
+```
+(calc-network-addr "10.1.0.42/24")
+(calc-network-addr "10.1.0.42/255.255.255.0")
+(calc-network-addr "10.1.0.42" :netmask "24")
+(calc-network-addr "10.1.0.42" :netmask "255.255.255.0")
+```
+
+### Network Size & Host Ranges
+
+* `(network-size addr &optional netmask)` — Total number of addresses in a network (2^host_bits)
+* `(usable-host-count addr &optional netmask)` — Usable host count (IPv4: network-size - 2; IPv6: network-size)
+* `(first-host addr &optional netmask)` — First usable host address (network addr + 1 for IPv4)
+* `(last-host addr &optional netmask)` — Last usable host address (broadcast - 1 for IPv4)
+
+```
+CL-USER> (ipcalc:network-size "10.0.0.0/24")
+256
+CL-USER> (ipcalc:usable-host-count "10.0.0.0/24")
+254
+CL-USER> (ipcalc:first-host "10.0.0.0/24")
+"10.0.0.1"
+CL-USER> (ipcalc:last-host "10.0.0.0/24")
+"10.0.0.254"
+```
+
+### Network Membership & Relationships
+
+* `(ip-in-network? ip network &optional netmask)` — Return t if ip falls within the given network
+* `(same-ip-network? addr1 addr2 &optional netmask)` — Return t if two addresses are in the same network
+* `(networks-overlap? net1 net2)` — Return t if two networks share any addresses
+* `(network-contains-network? outer inner)` — Return t if outer wholly contains inner
+* `(supernet addr &optional netmask)` — Return the next larger enclosing network as a CIDR string
+* `(split-network addr new-prefix &optional netmask)` — Split a network into subnets of new-prefix length
+* `(collapse-networks networks)` — Given a list of CIDR strings, return the minimal equivalent set
+
+```
+CL-USER> (ipcalc:ip-in-network? "10.0.5.1" "10.0.0.0/8")
+T
+CL-USER> (ipcalc:ip-in-network? "192.168.1.1" "10.0.0.0/8")
+NIL
+CL-USER> (ipcalc:networks-overlap? "10.0.0.0/23" "10.0.1.0/24")
+T
+CL-USER> (ipcalc:network-contains-network? "10.0.0.0/8" "10.1.2.0/24")
+T
+CL-USER> (ipcalc:supernet "192.168.1.0/24")
+"192.168.0.0/23"
+CL-USER> (ipcalc:split-network "10.0.0.0/24" 25)
+("10.0.0.0/25" "10.0.0.128/25")
+CL-USER> (ipcalc:collapse-networks '("10.0.0.0/25" "10.0.0.128/25" "192.168.1.0/24"))
+("10.0.0.0/24" "192.168.1.0/24")
+```
+
+### CIDR / Range Conversion
+
+* `(iprange-to-cidr ip-start ip-end)` — Convert IP range to smallest set of CIDR blocks
+* `(cidr-to-iprange cidr)` — Convert CIDR block to `(start-int . end-int)` cons
+
+```
+CL-USER> (ipcalc:iprange-to-cidr "10.11.12.13" "10.12.13.14")
+("10.12.13.14/32" "10.12.13.12/31" ...)
+```
+
+### Address Classification
+
+* `(rfc1918-addr? ip)` — Return t if IPv4 address is in RFC 1918 private space
+* `(multicast-addr? ip)` — Return t if address is multicast (224.0.0.0/4 IPv4, ff00::/8 IPv6)
+* `(loopback-addr? ip)` — Return t if address is loopback (127.0.0.0/8 IPv4, ::1 IPv6)
+* `(link-local-addr? ip)` — Return t if address is link-local (169.254.0.0/16 IPv4, fe80::/10 IPv6)
+* `(unspecified-addr? ip)` — Return t if address is the unspecified address (0.0.0.0 or ::)
+* `(unique-local-addr? ip)` — Return t if IPv6 address is unique local (fc00::/7, the IPv6 RFC 1918 equivalent)
+
+```
+CL-USER> (ipcalc:loopback-addr? "127.0.0.1")
+T
+CL-USER> (ipcalc:loopback-addr? "::1")
+T
+CL-USER> (ipcalc:link-local-addr? "169.254.1.1")
+T
+CL-USER> (ipcalc:link-local-addr? "fe80::1")
+T
+CL-USER> (ipcalc:multicast-addr? "ff02::1")
+T
+CL-USER> (ipcalc:unique-local-addr? "fd12:3456::1")
+T
+```
+
+### Netmask Utilities
+
+* `(valid-netmask? mask)` — Return t if string is a valid netmask (contiguous 1-bits then 0-bits)
+* `(wildcard-mask addr &optional netmask)` — Return the wildcard (inverse/Cisco ACL) mask
+
+```
+CL-USER> (ipcalc:valid-netmask? "255.255.255.0")
+T
+CL-USER> (ipcalc:valid-netmask? "255.255.254.1")
+NIL
+CL-USER> (ipcalc:wildcard-mask "10.0.0.0/24")
+"0.0.0.255"
+CL-USER> (ipcalc:wildcard-mask "255.255.255.0")
+"0.0.0.255"
+```
+
+### Reverse DNS
+
+* `(reverse-dns-ptr ip)` — Return the PTR record name for an IP address
+
+```
+CL-USER> (ipcalc:reverse-dns-ptr "192.168.1.1")
+"1.1.168.192.in-addr.arpa"
+CL-USER> (ipcalc:reverse-dns-ptr "2001:db8::1")
+"1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa"
+```
+
+### Integer Conversion
 
 ```
 CL-USER> (ipcalc:ip-to-int "2001:b00b:1e5::1")
@@ -58,93 +175,31 @@ CL-USER> (ipcalc:ip-to-int "10.1.0.42")
 167837738
 CL-USER> (ipcalc:int-to-ipv6 42544058738162202133965779820242534401)
 "2001:B00B:1E5::1"
-CL-USER>
 ```
 
-(ip-info) is a convenience function that returns info about the specified network:
+### Protocol & Service Name Lookup
 
-```
-CL-USER> (ipcalc:ip-info "2001:b00b:1e5:0:0:0:0:1/64")
-Address: 2001:b00b:1e5:0:0:0:0:1
-Netmask: FFFF:FFFF:FFFF:FFFF::
-Broadcast: 2001:B00B:1E5:0:FFFF:FFFF:FFFF:FFFF
-Network: 2001:B00B:1E5::
-NIL
-CL-USER>
-```
-
-(iprange-to-cidr) is a function accepts an IP range (lower IP and
-upper IP) and returns the smallest possible set of CIDR blocks that
-represent that range:
-
-```
-CL-USER> (iprange-to-cidr "10.11.12.13" "10.12.13.14")
-("10.12.13.14/32" "10.12.13.12/31" "10.12.13.8/30" "10.12.13.0/29"
- "10.12.12.0/24" "10.12.8.0/22" "10.12.0.0/21" "10.11.128.0/17" "10.11.64.0/18"
- "10.11.32.0/19" "10.11.16.0/20" "10.11.14.0/23" "10.11.13.0/24"
- "10.11.12.128/25" "10.11.12.64/26" "10.11.12.32/27" "10.11.12.16/28"
- "10.11.12.14/31" "10.11.12.13/32")
-CL-USER>
-```
-
-(same-ip-network?) takes three parameters (or two, if CIDR notation is used):  address one, address two, and a netmask (if not specified in CIDR notation in one of the first two arguments). Note that if argument one specifies a netmask, that is used. Else the netmask in argument two, else the explicitly supplied netmask. This function returns t if both addresses are part of the same network, else nil. Example:
-
-```
-CL-USER> (ipcalc:same-ip-network? "10.1.1.1/24" "10.2.2.1/24")
-NIL
-CL-USER>
-```
-
-(multicast-addr?) only works for IPv4 (as multicast is handled differently in IPv6) and returns t if the supplied address is an IPv4 multicast address or nil if the address is either an IPv6 address or a non-multicast IPv4 address.
-
-(cidr-to-ipv4-netmask) and (cidr-to-ipv6-netmask) both accept a single integer as an argument and return a string of the full netmask representation. Example:
-
-```
-CL-USER> (ipcalc:cidr-to-ipv4-netmask 24)
-"255.255.255.0"
-CL-USER> (ipcalc:cidr-to-ipv6-netmask 64)
-"FFFF:FFFF:FFFF:FFFF::"
-CL-USER>
-```
-
-(proto-num-to-name) Converts a integer representing an IP protocol
-number into it's English name:
+* `(proto-num-to-name num)` — Convert protocol number to name (e.g., 6 → "tcp")
+* `(name-to-proto-num name)` — Convert protocol name to number (case-insensitive)
+* `(iana-tcp-service-name port &optional formatted)` — IANA TCP service name for a port
+* `(iana-udp-service-name port &optional formatted)` — IANA UDP service name for a port
+* `(iana-port-name port proto)` — Unified service lookup by port and protocol number
 
 ```
 CL-USER> (ipcalc:proto-num-to-name 6)
 "tcp"
-CL-USER> 
-```
-
-(name-to-proto-num) Converts a (case-insensitive) string containing
-the English name of a protocol into the corresponding protocol number
-(or nil if invalid/unknown):
-
-```
 CL-USER> (ipcalc:name-to-proto-num "TCP")
 6
-CL-USER> 
-```
-
-(iana-tcp-service-name) and (iana-udp-service-name) return the IANA
-assigned name (or sometimes the de-facto name) of a service
-represented by the integer port value supplied. If an optional flag is
-t, it also includes an English string for port/proto:
-
-```
 CL-USER> (ipcalc:iana-tcp-service-name 22)
 "ssh"
 CL-USER> (ipcalc:iana-tcp-service-name 22 t)
 "22/tcp (ssh)"
-CL-USER> (ipcalc:iana-tcp-service-name 999)
-NIL
 CL-USER> (ipcalc:iana-tcp-service-name 999 t)
 "999/tcp (unknown)"
-CL-USER>
 ```
 
+## Notes
 
-
-## ToDo
-* Return a list of usable addresses in a given subnet
-* RFC6052 conversion (embedding IPv4 addresses in IPv6)
+* `collapse-networks` is currently IPv4 only.
+* `unique-local-addr?` returns nil for IPv4 (no equivalent concept).
+* `(is-it-ipv4?)` and `(is-it-ipv6?)` use simple string heuristics (presence of `.` or `:`), not strict validation.

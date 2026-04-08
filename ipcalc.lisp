@@ -410,13 +410,11 @@ me if both IP addresses are part of the same network."
       (same-ip-network? ip "192.168.0.0" "255.255.0.0")))
 
 (defun multicast-addr? (ip)
-  "Given a dotted quad string IP address, tell me if it's a multicast
-address or not. (currently only works for IPv4)."
+  "Return t if the IP address is a multicast address (224.0.0.0/4 for
+IPv4, ff00::/8 for IPv6)."
   (if (is-it-ipv6? ip)
-      nil
-      (if (same-ip-network? ip "224.0.0.0" (cidr-to-ipv4-netmask 4))
-	  t
-	  nil)))
+      (if (same-ip-network? ip "FF00::" (cidr-to-ipv6-netmask 8)) t nil)
+      (if (same-ip-network? ip "224.0.0.0" (cidr-to-ipv4-netmask 4)) t nil)))
 
 (defun iprange-to-cidr (ip-start ip-end)
   "Given a range of IP addresses, return the smallest possible number
@@ -483,6 +481,220 @@ of CIDR blocks that represent that range."
     (t
      (format nil "~A/~A" port (proto-num-to-name proto)))))
 
+
+;;; -----------------------------------------------------------------------
+;;; New functions
+;;; -----------------------------------------------------------------------
+
+(defun netmask-to-cidr (mask)
+  "Convert a netmask string (dotted quad for IPv4, colon-hex for IPv6)
+to a CIDR prefix length integer. Example: \"255.255.255.0\" => 24."
+  (length (remove 0 (ip-to-bin mask))))
+
+(defun valid-netmask? (mask)
+  "Return t if the string is a valid netmask (contiguous 1-bits followed
+by 0-bits, no interleaving)."
+  (let* ((bits (ip-to-bin mask))
+         (seen-zero nil))
+    (loop for bit in bits
+          do (cond
+               ((and seen-zero (= bit 1)) (return-from valid-netmask? nil))
+               ((= bit 0) (setf seen-zero t))))
+    t))
+
+(defun ip-in-network? (ip network &optional netmask)
+  "Return t if IP falls within the given network. Network may be specified
+as a CIDR string (\"10.0.0.0/8\") or as a separate netmask argument."
+  (let* ((tmp (parse-address network netmask))
+         (net-addr (first tmp))
+         (net-mask (second tmp)))
+    (equal
+     (ip-network (ip-to-bin ip) (ip-to-bin net-mask))
+     (ip-network (ip-to-bin net-addr) (ip-to-bin net-mask)))))
+
+(defun network-size (addr &optional netmask)
+  "Return the total number of addresses in a network (including network
+address and broadcast)."
+  (let* ((tmp (parse-address addr netmask))
+         (net-mask (second tmp))
+         (total-bits (if (is-it-ipv6? (first tmp)) 128 32))
+         (prefix (netmask-to-cidr net-mask)))
+    (expt 2 (- total-bits prefix))))
+
+(defun usable-host-count (addr &optional netmask)
+  "Return the number of usable host addresses in a network. For IPv4 this
+excludes the network address and broadcast address. For IPv6 (no broadcast
+concept) this equals network-size."
+  (let* ((tmp (parse-address addr netmask))
+         (is-ipv6 (is-it-ipv6? (first tmp)))
+         (size (network-size addr netmask)))
+    (if is-ipv6
+        size
+        (max 0 (- size 2)))))
+
+(defun first-host (addr &optional netmask)
+  "Return the first usable host address in a network. For IPv4 this is
+the network address + 1. For IPv6 this is the network address itself."
+  (let* ((tmp (parse-address addr netmask))
+         (addr-str (first tmp))
+         (net-mask (second tmp))
+         (net-int (ip-to-int (calc-network-addr addr-str :netmask net-mask)))
+         (is-ipv6 (is-it-ipv6? addr-str)))
+    (if is-ipv6
+        (int-to-ipv6 net-int)
+        (int-to-ipv4 (+ net-int 1)))))
+
+(defun last-host (addr &optional netmask)
+  "Return the last usable host address in a network. For IPv4 this is the
+broadcast address - 1. For IPv6 this is the broadcast (last) address."
+  (let* ((tmp (parse-address addr netmask))
+         (addr-str (first tmp))
+         (net-mask (second tmp))
+         (bcast-int (ip-to-int (calc-broadcast-addr addr-str net-mask)))
+         (is-ipv6 (is-it-ipv6? addr-str)))
+    (if is-ipv6
+        (int-to-ipv6 bcast-int)
+        (int-to-ipv4 (- bcast-int 1)))))
+
+(defun networks-overlap? (net1 net2)
+  "Return t if two networks have any addresses in common. Accepts CIDR strings."
+  (let* ((tmp1 (parse-address net1 nil))
+         (addr1 (first tmp1))
+         (mask1 (second tmp1))
+         (start1 (ip-to-int (calc-network-addr addr1 :netmask mask1)))
+         (end1 (ip-to-int (calc-broadcast-addr addr1 mask1)))
+         (tmp2 (parse-address net2 nil))
+         (addr2 (first tmp2))
+         (mask2 (second tmp2))
+         (start2 (ip-to-int (calc-network-addr addr2 :netmask mask2)))
+         (end2 (ip-to-int (calc-broadcast-addr addr2 mask2))))
+    (and (<= start1 end2) (<= start2 end1))))
+
+(defun network-contains-network? (outer inner)
+  "Return t if OUTER wholly contains INNER (i.e., INNER is a subnet of OUTER).
+Both arguments accept CIDR notation."
+  (let* ((tmp-o (parse-address outer nil))
+         (addr-o (first tmp-o))
+         (mask-o (second tmp-o))
+         (start-o (ip-to-int (calc-network-addr addr-o :netmask mask-o)))
+         (end-o (ip-to-int (calc-broadcast-addr addr-o mask-o)))
+         (tmp-i (parse-address inner nil))
+         (addr-i (first tmp-i))
+         (mask-i (second tmp-i))
+         (start-i (ip-to-int (calc-network-addr addr-i :netmask mask-i)))
+         (end-i (ip-to-int (calc-broadcast-addr addr-i mask-i))))
+    (and (<= start-o start-i) (>= end-o end-i))))
+
+(defun supernet (addr &optional netmask)
+  "Return the next larger enclosing network (supernet) as a CIDR string.
+Example: \"192.168.1.0/24\" => \"192.168.0.0/23\"."
+  (let* ((tmp (parse-address addr netmask))
+         (addr-str (first tmp))
+         (net-mask (second tmp))
+         (prefix (netmask-to-cidr net-mask))
+         (is-ipv6 (is-it-ipv6? addr-str))
+         (new-prefix (max 0 (- prefix 1)))
+         (new-mask (if is-ipv6
+                       (cidr-to-ipv6-netmask new-prefix)
+                       (cidr-to-ipv4-netmask new-prefix)))
+         (net-addr (calc-network-addr addr-str :netmask new-mask)))
+    (format nil "~A/~A" net-addr new-prefix)))
+
+(defun split-network (addr new-prefix &optional netmask)
+  "Split a network into subnets of NEW-PREFIX length. Returns a list of
+CIDR strings. NEW-PREFIX must be larger than the current prefix length.
+Example: (split-network \"10.0.0.0/24\" 25) => (\"10.0.0.0/25\" \"10.0.0.128/25\")"
+  (let* ((tmp (parse-address addr netmask))
+         (addr-str (first tmp))
+         (net-mask (second tmp))
+         (old-prefix (netmask-to-cidr net-mask))
+         (is-ipv6 (is-it-ipv6? addr-str))
+         (total-bits (if is-ipv6 128 32))
+         (subnet-size (expt 2 (- total-bits new-prefix)))
+         (start-int (ip-to-int (calc-network-addr addr-str :netmask net-mask)))
+         (end-int (ip-to-int (calc-broadcast-addr addr-str net-mask))))
+    (when (<= new-prefix old-prefix)
+      (error "New prefix ~A must be larger than current prefix ~A" new-prefix old-prefix))
+    (loop for i from start-int to end-int by subnet-size
+          collect (format nil "~A/~A"
+                          (if is-ipv6 (int-to-ipv6 i) (int-to-ipv4 i))
+                          new-prefix))))
+
+(defun collapse-networks (networks)
+  "Given a list of network strings in CIDR notation, return the minimal
+equivalent set with overlapping and adjacent networks merged. Currently
+supports IPv4 only."
+  (let* ((ranges (mapcar (lambda (net)
+                           (let* ((tmp (parse-address net nil))
+                                  (addr (first tmp))
+                                  (mask (second tmp)))
+                             (list (ip-to-int (calc-network-addr addr :netmask mask))
+                                   (ip-to-int (calc-broadcast-addr addr mask)))))
+                         networks))
+         (sorted (sort ranges #'< :key #'first))
+         (merged nil))
+    (dolist (r sorted)
+      (if (null merged)
+          (push (list (first r) (second r)) merged)
+          (let ((last (first merged)))
+            (if (<= (first r) (1+ (second last)))
+                (setf (second last) (max (second last) (second r)))
+                (push (list (first r) (second r)) merged)))))
+    (setf merged (nreverse merged))
+    (loop for (start end) in merged
+          append (iprange-to-cidr (int-to-ipv4 start) (int-to-ipv4 end)))))
+
+(defun loopback-addr? (ip)
+  "Return t if the IP address is a loopback address (127.0.0.0/8 for
+IPv4, ::1 for IPv6)."
+  (if (is-it-ipv6? ip)
+      (= (ip-to-int ip) 1)
+      (same-ip-network? ip "127.0.0.0" "255.0.0.0")))
+
+(defun link-local-addr? (ip)
+  "Return t if the IP address is a link-local address (169.254.0.0/16
+for IPv4, fe80::/10 for IPv6)."
+  (if (is-it-ipv6? ip)
+      (if (same-ip-network? ip "FE80::" (cidr-to-ipv6-netmask 10)) t nil)
+      (same-ip-network? ip "169.254.0.0" "255.255.0.0")))
+
+(defun unspecified-addr? (ip)
+  "Return t if the IP is the unspecified address (0.0.0.0 for IPv4 or
+:: for IPv6)."
+  (= 0 (ip-to-int ip)))
+
+(defun unique-local-addr? (ip)
+  "Return t if the IPv6 address is a unique local address (fc00::/7),
+the IPv6 equivalent of RFC 1918 private space. Returns nil for IPv4."
+  (when (is-it-ipv6? ip)
+    (if (same-ip-network? ip "FC00::" (cidr-to-ipv6-netmask 7)) t nil)))
+
+(defun wildcard-mask (addr &optional netmask)
+  "Return the wildcard (inverse/Cisco ACL) mask for a network. Accepts
+a CIDR string, network+netmask, or a bare netmask string.
+Example: (wildcard-mask \"10.0.0.0/24\") => \"0.0.0.255\""
+  (let* ((tmp (parse-address addr netmask))
+         (net-mask (second tmp))
+         (mask-str (or net-mask (first tmp)))
+         (mask-bin (ip-to-bin mask-str))
+         (wildcard-bin (mapcar #'ip-not mask-bin)))
+    (bin-to-ip-string wildcard-bin)))
+
+(defun reverse-dns-ptr (ip)
+  "Return the reverse DNS PTR record name for an IP address.
+IPv4: \"1.0.168.192.in-addr.arpa\"
+IPv6: nibble-reversed ip6.arpa form."
+  (if (is-it-ipv6? ip)
+      (let* ((full-str (bin-to-ipv6-full-string (ipv6-to-bin ip)))
+             (hex-only (remove #\: full-str))
+             (nibbles (reverse (coerce hex-only 'list))))
+        (concatenate 'string
+                     (format nil "~{~C.~}" nibbles)
+                     "ip6.arpa"))
+      (let ((octets (split-sequence #\. ip)))
+        (format nil "~A.~A.~A.~A.in-addr.arpa"
+                (fourth octets) (third octets)
+                (second octets) (first octets)))))
 
 (setf (gethash 1 iana-tcp) "tcpmux")
 (setf (gethash 7 iana-tcp) "echo")
